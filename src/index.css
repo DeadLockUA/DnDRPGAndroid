@@ -1,17 +1,17 @@
 :root {
-  --bg: #14121c;
-  --bg-elev: #1e1b2e;
-  --bg-elev-2: #272338;
-  --border: #3a3450;
-  --text: #ece8f5;
-  --text-dim: #a49dc0;
-  --accent: #b18cff;
-  --accent-strong: #8b5cf6;
-  --accent-ink: #1a1425;
+  --bg: #0e1512;
+  --bg-elev: #14201a;
+  --bg-elev-2: #1c2c24;
+  --border: #2e463a;
+  --text: #e7f1eb;
+  --text-dim: #93b3a2;
+  --accent: #4ade80;
+  --accent-strong: #16a34a;
+  --accent-ink: #06140c;
   --danger: #ff6b6b;
   --danger-bg: #3a1e26;
-  --success: #4ade80;
-  --success-bg: #16301f;
+  --success: #86efac;
+  --success-bg: #14301f;
   --gold: #e9c46a;
   --radius: 12px;
   --radius-sm: 8px;
@@ -34,7 +34,7 @@ body,
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, #2a2140 0%, transparent 60%),
+    radial-gradient(1200px 600px at 50% -10%, #123524 0%, transparent 60%),
     var(--bg);
   color: var(--text);
   line-height: 1.55;
@@ -112,7 +112,7 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(177, 140, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
 }
 
 textarea {
