@@ -1,0 +1,269 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
+import { IDBFactory } from 'fake-indexeddb'
+
+// Controllable fake Gemini client, injected via a mocked useApp.
+const { gemini } = vi.hoisted(() => ({
+  gemini: {
+    generateDMTurn: vi.fn(),
+    summarize: vi.fn(),
+    generateCreationReply: vi.fn(),
+    extractCharacterSheet: vi.fn(),
+    validateApiKey: vi.fn(),
+    updateSettings: vi.fn(),
+  },
+}))
+
+vi.mock('../../../app/AppContext', () => ({
+  useApp: () => ({ gemini, language: 'en' }),
+}))
+
+import { useGameplay } from '../useGameplay'
+import { _resetDBHandle, initDB } from '../../../db'
+import {
+  createSession,
+  getSession,
+  type NewSessionData,
+} from '../../../db/game-session'
+import type { DMResponse, StateUpdate, ChatMessage } from '../../../api/types'
+import { GeminiError } from '../../../api/types'
+
+type SeedData = NewSessionData
+
+function plain(narration = 'Nothing happens.'): DMResponse {
+  return {
+    narration,
+    dice_request: { needed: false, ability: 'none', dc: 0, reason: '' },
+    state_updates: [],
+  }
+}
+
+function needsRoll(): DMResponse {
+  return {
+    narration: 'Make a check.',
+    dice_request: { needed: true, ability: 'dex', dc: 10, reason: 'lockpick' },
+    state_updates: [],
+  }
+}
+
+function withUpdates(updates: StateUpdate[], narration = 'It resolves.'): DMResponse {
+  return {
+    narration,
+    dice_request: { needed: false, ability: 'none', dc: 0, reason: '' },
+    state_updates: updates,
+  }
+}
+
+// Session pre-seeded with one DM message so the hook starts idle (no opening call).
+function seed(overrides: Partial<SeedData> = {}): SeedData {
+  const base: NewSessionData = {
+    characterName: 'Thorn',
+    archetype: 'Rogue',
+    backstory: 'Sneaky.',
+    stats: { str: 10, dex: 16, con: 12, int: 13, wis: 11, cha: 14 },
+    hp: { current: 10, max: 10 },
+    inventory: [{ name: 'Sword', description: 'Sharp', quantity: 1 }],
+    statuses: [],
+    messages: [{ role: 'dm', content: 'The tale begins.', timestamp: 0 }],
+    summary: '',
+  }
+  return { ...base, ...overrides }
+}
+
+beforeEach(async () => {
+  vi.clearAllMocks()
+  _resetDBHandle()
+  ;(globalThis as unknown as { indexedDB: IDBFactory }).indexedDB =
+    new IDBFactory()
+  await initDB()
+})
+
+async function mountFor(sessionId: string) {
+  const view = renderHook(() => useGameplay(sessionId))
+  await waitFor(() => expect(view.result.current.phase).toBe('idle'))
+  return view
+}
+
+describe('useGameplay — dice → updates → accept', () => {
+  it('rolls, then applies and persists accepted HP damage', async () => {
+    gemini.generateDMTurn
+      .mockResolvedValueOnce(needsRoll())
+      .mockResolvedValueOnce(
+        withUpdates([{ type: 'hp_delta', payload: { amount: -3 }, reason: 'hit' }]),
+      )
+
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I pick the lock')
+    })
+    expect(result.current.phase).toBe('awaitingRoll')
+    expect(result.current.pendingRoll?.ability).toBe('dex')
+
+    await act(async () => {
+      await result.current.roll()
+    })
+    expect(result.current.phase).toBe('awaitingConfirm')
+    expect(result.current.pendingUpdates).toHaveLength(1)
+
+    await act(async () => {
+      await result.current.accept()
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(result.current.session?.hp.current).toBe(7)
+
+    // Persisted to IndexedDB.
+    const reloaded = await getSession(s.id)
+    expect(reloaded?.hp.current).toBe(7)
+    // Dice result was recorded as a system message.
+    expect(
+      reloaded?.messages.some((m: ChatMessage) => m.diceResult?.ability === 'dex'),
+    ).toBe(true)
+  })
+
+  it('goes to defeated when accepted damage drops HP to 0', async () => {
+    gemini.generateDMTurn.mockResolvedValueOnce(
+      withUpdates([{ type: 'hp_delta', payload: { amount: -50 }, reason: 'crush' }]),
+    )
+    const s = await createSession(seed({ hp: { current: 10, max: 10 } }))
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I taunt the dragon')
+    })
+    expect(result.current.phase).toBe('awaitingConfirm')
+
+    await act(async () => {
+      await result.current.accept()
+    })
+    expect(result.current.phase).toBe('defeated')
+    expect(result.current.session?.hp.current).toBe(0)
+  })
+})
+
+describe('useGameplay — reject & other', () => {
+  it('reject does not apply updates and asks the DM again', async () => {
+    gemini.generateDMTurn
+      .mockResolvedValueOnce(
+        withUpdates([
+          { type: 'inventory_remove', payload: { name: 'Sword', quantity: 1 }, reason: 'stolen' },
+        ]),
+      )
+      .mockResolvedValueOnce(plain('A different twist.'))
+
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I confront the thief')
+    })
+    expect(result.current.phase).toBe('awaitingConfirm')
+
+    await act(async () => {
+      await result.current.reject()
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
+    // Sword NOT removed.
+    expect(
+      result.current.session?.inventory.find((i) => i.name === 'Sword'),
+    ).toBeDefined()
+  })
+
+  it('other sends the player note and triggers a new DM turn', async () => {
+    gemini.generateDMTurn
+      .mockResolvedValueOnce(
+        withUpdates([{ type: 'hp_delta', payload: { amount: -4 }, reason: 'trap' }]),
+      )
+      .mockResolvedValueOnce(plain('You dodge instead.'))
+
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I step forward')
+    })
+    expect(result.current.phase).toBe('awaitingConfirm')
+
+    await act(async () => {
+      await result.current.other('I want to dodge, not take damage')
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
+    // No damage applied (updates were discarded).
+    expect(result.current.session?.hp.current).toBe(10)
+    // The player's note is in history.
+    expect(
+      result.current.session?.messages.some(
+        (m) => m.role === 'player' && m.content.includes('dodge'),
+      ),
+    ).toBe(true)
+  })
+})
+
+describe('useGameplay — rate-limit retry', () => {
+  it('surfaces RATE_LIMIT + retryAfterMs, then retry replays the turn', async () => {
+    gemini.generateDMTurn
+      .mockRejectedValueOnce(new GeminiError('RATE_LIMIT', '429 quota', 5000))
+      .mockResolvedValueOnce(plain('The story continues.'))
+
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I look around')
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(result.current.error).toBe('RATE_LIMIT')
+    expect(result.current.retryAfterMs).toBe(5000)
+
+    await act(async () => {
+      result.current.retry()
+    })
+    await waitFor(() => expect(result.current.error).toBeNull())
+    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
+    expect(
+      result.current.session?.messages.some(
+        (m) => m.role === 'dm' && m.content === 'The story continues.',
+      ),
+    ).toBe(true)
+  })
+})
+
+describe('useGameplay — context summarization', () => {
+  it('compacts old history into a summary once past 40 messages', async () => {
+    gemini.summarize.mockResolvedValue('A tidy recap.')
+    gemini.generateDMTurn.mockResolvedValueOnce(plain())
+
+    // 49 messages seeded; the player's action makes 50 → triggers summarize.
+    const many: ChatMessage[] = Array.from({ length: 49 }, (_, i) => ({
+      role: i % 2 === 0 ? 'dm' : 'player',
+      content: `line ${i}`,
+      timestamp: i,
+    }))
+    const s = await createSession(seed({ messages: many }))
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('the 50th message')
+    })
+
+    expect(gemini.summarize).toHaveBeenCalledTimes(1)
+    // Summarized everything except the most recent 10.
+    const transcriptArg = gemini.summarize.mock.calls[0][0] as string
+    expect(transcriptArg).toContain('line 0')
+    expect(result.current.session?.summary).toBe('A tidy recap.')
+  })
+
+  it('does not summarize below the threshold', async () => {
+    gemini.generateDMTurn.mockResolvedValueOnce(plain())
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('just one action')
+    })
+    expect(gemini.summarize).not.toHaveBeenCalled()
+  })
+})
