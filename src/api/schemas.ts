@@ -71,6 +71,24 @@ export const DM_RESPONSE_SCHEMA = {
   propertyOrdering: ['narration', 'dice_request', 'state_updates'],
 }
 
+// Gemini responseSchema for one character-creation chat turn.
+export const CREATION_REPLY_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    message: {
+      type: Type.STRING,
+      description: 'Conversational reply to the player, in their language.',
+    },
+    ready: {
+      type: Type.BOOLEAN,
+      description:
+        'True ONLY once name, archetype, backstory, all six ability scores, and starting inventory are decided.',
+    },
+  },
+  required: ['message', 'ready'],
+  propertyOrdering: ['message', 'ready'],
+}
+
 // Gemini responseSchema for the final character-sheet extraction.
 export const CHARACTER_SHEET_SCHEMA = {
   type: Type.OBJECT,

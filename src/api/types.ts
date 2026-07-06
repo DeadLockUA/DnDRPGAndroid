@@ -108,6 +108,13 @@ export interface CharacterSheet {
   inventory: InventoryItem[]
 }
 
+// One turn of the character-creation chat. `ready` flips true once the guide
+// has gathered everything, which auto-starts the adventure.
+export interface CreationReply {
+  message: string
+  ready: boolean
+}
+
 // ---- Persistence ----
 
 export interface GameSession {

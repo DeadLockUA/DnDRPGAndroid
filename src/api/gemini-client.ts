@@ -4,11 +4,16 @@ import type {
   DMResponse,
   ChatMessage,
   CharacterSheet,
+  CreationReply,
   Language,
 } from './types'
 import { GeminiError } from './types'
 import { classifyGeminiError } from './error-handler'
-import { DM_RESPONSE_SCHEMA, CHARACTER_SHEET_SCHEMA } from './schemas'
+import {
+  DM_RESPONSE_SCHEMA,
+  CHARACTER_SHEET_SCHEMA,
+  CREATION_REPLY_SCHEMA,
+} from './schemas'
 import {
   buildDMSystemPrompt,
   buildCharacterCreationSystemPrompt,
@@ -119,23 +124,28 @@ export class GeminiClient {
     return parseJson<DMResponse>(text)
   }
 
-  /** Free-form character-creation reply (plain text). */
+  /** One character-creation reply plus a readiness flag (structured). */
   async generateCreationReply(
     history: ChatMessage[],
     language: Language,
-  ): Promise<string> {
+  ): Promise<CreationReply> {
+    let text: string
     try {
       const res = await this.client().models.generateContent({
         model: this.settings.geminiModel,
         contents: toContents(history),
         config: {
           systemInstruction: buildCharacterCreationSystemPrompt(language),
+          responseMimeType: 'application/json',
+          responseSchema: CREATION_REPLY_SCHEMA,
         },
       })
-      return res.text ?? ''
+      text = res.text ?? ''
     } catch (error) {
       throw classifyGeminiError(error)
     }
+    const parsed = parseJson<CreationReply>(text)
+    return { message: parsed.message ?? '', ready: !!parsed.ready }
   }
 
   /** Convert the creation conversation into a structured sheet. */

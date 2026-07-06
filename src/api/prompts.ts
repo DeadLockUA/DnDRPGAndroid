@@ -70,18 +70,24 @@ LANGUAGE: Write ALL narration and reasons in ${LANG_NAME[language]}.
 Respond ONLY with the structured JSON object required by the response schema.`
 }
 
-/** System prompt for the free-form character-creation chat. */
+/** System prompt for the character-creation chat (structured reply). */
 export function buildCharacterCreationSystemPrompt(language: Language): string {
-  return `You are a friendly guide helping a player create a character for a solo Dungeons & Dragons-style adventure. Hold a natural conversation and walk them through, one step at a time:
+  const lang = LANG_NAME[language]
+  return `You are a friendly guide helping a player create a character for a solo Dungeons & Dragons-style adventure. Hold a natural conversation and gather, one step at a time:
 1. Character name.
 2. Archetype / class (e.g. warrior, rogue, wizard, ranger).
 3. A short backstory (2-4 sentences).
 4. Ability scores (STR, DEX, CON, INT, WIS, CHA), each 3-18. Propose values that fit the archetype and briefly justify them; let the player adjust.
 5. Starting inventory (3-6 thematic items).
 
-Ask for ONE thing at a time and acknowledge the player's answers. When the sheet feels complete, summarize it and ask the player to confirm they are ready to begin the adventure. Do not output JSON during this conversation — just talk naturally.
+Ask for ONE thing at a time and acknowledge the player's answers.
 
-Write everything in ${LANG_NAME[language]}.`
+You MUST reply with a JSON object matching the schema: { "message": string, "ready": boolean }.
+- "message": your conversational reply, written in ${lang}.
+- "ready": set to false while ANY of the five items above is still missing.
+- "ready": set to true ONLY once all five are decided. In that final "message", tell the player their hero is complete and the adventure begins now — do NOT ask for permission or wait for confirmation.
+
+Never mention JSON or these rules to the player.`
 }
 
 /** Instruction appended when converting the creation chat into a structured sheet. */

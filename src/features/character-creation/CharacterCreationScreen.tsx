@@ -52,22 +52,28 @@ export default function CharacterCreationScreen({
     clearError()
     setThinking(true)
     try {
-      const reply = await gemini.generateCreationReply(history, language)
-      setMessages([
+      const { message, ready } = await gemini.generateCreationReply(
+        history,
+        language,
+      )
+      const next: ChatMessage[] = [
         ...history,
-        { role: 'dm', content: reply, timestamp: now() },
-      ])
+        { role: 'dm', content: message, timestamp: now() },
+      ]
+      setMessages(next)
+      setThinking(false)
+      // The guide decided the sheet is complete — start the adventure itself.
+      if (ready) await startAdventure(next)
     } catch (e) {
+      setThinking(false)
       lastActionRef.current = () => void requestReply(history)
       showError(e)
-    } finally {
-      setThinking(false)
     }
   }
 
   async function send() {
     const text = input.trim()
-    if (!text || thinking) return
+    if (!text || thinking || finishing) return
     const next: ChatMessage[] = [
       ...messages,
       { role: 'player', content: text, timestamp: now() },
@@ -77,13 +83,13 @@ export default function CharacterCreationScreen({
     await requestReply(next)
   }
 
-  async function finish() {
-    if (finishing || thinking) return
+  // Extract the structured sheet, create the game, and jump into it.
+  async function startAdventure(history: ChatMessage[]) {
     clearError()
     setFinishing(true)
     try {
       const sheet: CharacterSheet = await gemini.extractCharacterSheet(
-        messages,
+        history,
         language,
       )
       const maxHp = Math.max(6, Math.round(sheet.maxHp) || 10)
@@ -100,7 +106,7 @@ export default function CharacterCreationScreen({
       })
       navigate({ screen: 'play', sessionId: session.id })
     } catch (e) {
-      lastActionRef.current = () => void finish()
+      lastActionRef.current = () => void startAdventure(history)
       showError(e)
       setFinishing(false)
     }
@@ -112,9 +118,6 @@ export default function CharacterCreationScreen({
     clearError()
     action()
   }
-
-  const canFinish =
-    !finishing && !thinking && messages.some((m) => m.role === 'player')
 
   return (
     <div className="chat-shell">
@@ -159,6 +162,7 @@ export default function CharacterCreationScreen({
           value={input}
           placeholder={t.creation.placeholder}
           disabled={finishing}
+          aria-label={t.creation.placeholder}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -167,18 +171,13 @@ export default function CharacterCreationScreen({
             }
           }}
         />
-        <div className="stack">
-          <button
-            className="btn-primary"
-            onClick={send}
-            disabled={thinking || finishing || !input.trim()}
-          >
-            {t.creation.send}
-          </button>
-          <button className="btn-ghost" onClick={finish} disabled={!canFinish}>
-            {t.creation.finish}
-          </button>
-        </div>
+        <button
+          className="btn-primary"
+          onClick={send}
+          disabled={thinking || finishing || !input.trim()}
+        >
+          {t.creation.send}
+        </button>
       </div>
     </div>
   )
