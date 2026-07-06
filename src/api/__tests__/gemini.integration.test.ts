@@ -19,7 +19,7 @@ import type { GameSession, ChatMessage, Settings } from '../types'
  */
 const KEY = process.env.GEMINI_LIVE_KEY
 const LIVE = process.env.RUN_GEMINI_LIVE === '1' && !!KEY
-const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash'
+const MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite'
 
 const settings: Settings = {
   apiKey: KEY ?? '',
