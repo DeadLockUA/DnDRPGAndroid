@@ -142,6 +142,22 @@ describe('useGameplay — dice → updates → accept', () => {
   })
 })
 
+describe('useGameplay — opening scene', () => {
+  it('never offers a roll on the opening turn, even if the DM asks', async () => {
+    // Empty message history → the hook fires an opening (kickoff) turn.
+    gemini.generateDMTurn.mockResolvedValueOnce(needsRoll())
+    const s = await createSession(seed({ messages: [] }))
+    const { result } = renderHook(() => useGameplay(s.id))
+
+    await waitFor(() => expect(result.current.phase).toBe('idle'))
+    expect(result.current.pendingRoll).toBeNull()
+    // The narration is still shown.
+    expect(
+      result.current.session?.messages.some((m) => m.role === 'dm'),
+    ).toBe(true)
+  })
+})
+
 describe('useGameplay — reject & other', () => {
   it('reject does not apply updates and asks the DM again', async () => {
     gemini.generateDMTurn

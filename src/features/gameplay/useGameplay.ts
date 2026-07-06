@@ -46,9 +46,11 @@ export function useGameplay(sessionId: string) {
   const [retryAfterMs, setRetryAfterMs] = useState<number | null>(null)
   const startedRef = useRef(false)
   // The most recent DM turn, so a failed call can be replayed verbatim.
-  const lastTurnRef = useRef<{ s: GameSession; history: ChatMessage[] } | null>(
-    null,
-  )
+  const lastTurnRef = useRef<{
+    s: GameSession
+    history: ChatMessage[]
+    allowDice: boolean
+  } | null>(null)
 
   const persist = useCallback(async (s: GameSession) => {
     await updateSession(s)
@@ -84,11 +86,17 @@ export function useGameplay(sessionId: string) {
   )
 
   // Process a fresh DM response into UI state / stored messages.
+  // `allowDice` is false for the opening scene, where the player hasn't acted
+  // yet, so a roll must never be offered preemptively.
   const applyDMResponse = useCallback(
-    async (s: GameSession, resp: Awaited<ReturnType<typeof gemini.generateDMTurn>>) => {
+    async (
+      s: GameSession,
+      resp: Awaited<ReturnType<typeof gemini.generateDMTurn>>,
+      allowDice: boolean,
+    ) => {
       s.messages.push({ role: 'dm', content: resp.narration, timestamp: ts() })
 
-      if (resp.dice_request?.needed) {
+      if (allowDice && resp.dice_request?.needed) {
         setPendingRoll(resp.dice_request)
         setPendingUpdates(null)
         await persist(s)
@@ -113,15 +121,15 @@ export function useGameplay(sessionId: string) {
   )
 
   const runDMTurn = useCallback(
-    async (s: GameSession, history: ChatMessage[]) => {
-      lastTurnRef.current = { s, history }
+    async (s: GameSession, history: ChatMessage[], allowDice = true) => {
+      lastTurnRef.current = { s, history, allowDice }
       setPhase('thinking')
       setError(null)
       setRetryAfterMs(null)
       try {
         await maybeSummarize(s)
         const resp = await gemini.generateDMTurn(s, history, language)
-        await applyDMResponse(s, resp)
+        await applyDMResponse(s, resp, allowDice)
       } catch (e) {
         showError(e)
         setPhase('idle')
@@ -134,7 +142,7 @@ export function useGameplay(sessionId: string) {
   const retry = useCallback(() => {
     const last = lastTurnRef.current
     if (!last || phase === 'thinking') return
-    void runDMTurn(last.s, last.history)
+    void runDMTurn(last.s, last.history, last.allowDice)
   }, [phase, runDMTurn])
 
   // Load the session; kick off an opening scene if brand new.
@@ -154,9 +162,12 @@ export function useGameplay(sessionId: string) {
       }
       if (s.messages.length === 0) {
         // Opening turn: seed a transient kickoff, persist only the narration.
-        await runDMTurn(s, [
-          { role: 'system', content: KICKOFF, timestamp: ts() },
-        ])
+        // allowDice=false — the player hasn't acted, so never offer a roll here.
+        await runDMTurn(
+          s,
+          [{ role: 'system', content: KICKOFF, timestamp: ts() }],
+          false,
+        )
       } else {
         setPhase('idle')
       }
