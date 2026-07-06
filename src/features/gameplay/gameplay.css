@@ -1,0 +1,36 @@
+.play-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.play-chat {
+  flex: 1;
+  height: 100vh;
+  max-width: none;
+}
+
+.dice-result {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.defeated {
+  color: var(--danger);
+  font-family: 'Georgia', serif;
+  font-size: 16px;
+  border-color: var(--danger);
+}
+
+@media (max-width: 720px) {
+  .play-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .play-chat {
+    height: auto;
+    min-height: 60vh;
+  }
+}

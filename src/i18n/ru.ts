@@ -1,0 +1,92 @@
+import type { Dictionary } from './en'
+
+export const RU: Dictionary = {
+  appTitle: 'D&D RPG — ИИ Мастер Подземелий',
+  loading: 'Загрузка…',
+
+  nav: {
+    settings: 'Настройки',
+    back: 'Назад',
+    home: 'Домой',
+  },
+
+  settings: {
+    title: 'Настройки',
+    apiKeyLabel: 'API-ключ Gemini',
+    apiKeyPlaceholder: 'Вставьте ваш API-ключ',
+    test: 'Проверить ключ',
+    testing: 'Проверка…',
+    testOk: 'Ключ работает!',
+    languageLabel: 'Язык',
+    modelLabel: 'Модель Gemini',
+    save: 'Сохранить',
+    saved: 'Сохранено',
+    privacyNote:
+      'API-ключ хранится только в этом браузере и отправляется только в Google для генерации контента. Больше никуда он не уходит.',
+    getKeyHint: 'Получите бесплатный ключ на aistudio.google.com/apikey',
+  },
+
+  sessions: {
+    title: 'Ваши приключения',
+    newGame: 'Новое приключение',
+    empty: 'Пока нет сохранённых игр. Начните новое приключение!',
+    continue: 'Продолжить',
+    delete: 'Удалить',
+    confirmDelete: 'Удалить это приключение навсегда?',
+    yes: 'Удалить',
+    no: 'Отмена',
+    lastPlayed: 'Последняя игра',
+    needKey: 'Укажите API-ключ Gemini в настройках перед началом.',
+  },
+
+  creation: {
+    title: 'Создание персонажа',
+    intro: 'Давайте создадим вашего героя. Напишите что-нибудь, чтобы начать.',
+    placeholder: 'Введите ответ…',
+    send: 'Отправить',
+    thinking: 'Думаю…',
+    finish: 'Завершить и начать приключение',
+    building: 'Формирую лист персонажа…',
+    restart: 'Начать заново',
+  },
+
+  play: {
+    title: 'Приключение',
+    dmThinking: 'Мастер думает…',
+    actionPlaceholder: 'Что вы делаете?',
+    send: 'Отправить',
+    rollPrompt: 'Нужна проверка {ability} (Сл {dc}).',
+    roll: 'Бросить d20',
+    rolling: 'Бросок…',
+    youRolled: 'Выпало {roll} {mod} = {total} против Сл {dc}',
+    critSuccess: 'Критический успех!',
+    critFail: 'Критический провал!',
+    success: 'Успех',
+    failure: 'Провал',
+    proposedChanges: 'Предлагаемые изменения',
+    accept: 'Принять',
+    reject: 'Отклонить',
+    other: 'Другое…',
+    otherPlaceholder: 'Опишите, что должно произойти вместо этого…',
+    submit: 'Отправить',
+    cancel: 'Отмена',
+    quit: 'Сохранить и выйти',
+    hp: 'ОЗ',
+    inventory: 'Инвентарь',
+    statuses: 'Эффекты',
+    abilities: 'Характеристики',
+    empty: '(пусто)',
+    none: '(нет)',
+    defeated: 'Вы пали. На этом приключение заканчивается.',
+  },
+
+  errors: {
+    INVALID_KEY: 'Неверный API-ключ. Проверьте его в настройках.',
+    RATE_LIMIT: 'Достигнут лимит запросов. Подождите и попробуйте снова.',
+    NETWORK: 'Ошибка сети. Проверьте подключение.',
+    MALFORMED_RESPONSE: 'ИИ вернул неожиданный ответ. Попробуйте снова.',
+    NO_KEY: 'API-ключ не задан. Добавьте его в настройках.',
+    UNKNOWN: 'Что-то пошло не так. Попробуйте снова.',
+    retry: 'Повторить',
+  },
+}

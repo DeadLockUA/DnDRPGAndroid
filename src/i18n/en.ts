@@ -1,0 +1,92 @@
+export const EN = {
+  appTitle: 'D&D RPG — AI Dungeon Master',
+  loading: 'Loading…',
+
+  nav: {
+    settings: 'Settings',
+    back: 'Back',
+    home: 'Home',
+  },
+
+  settings: {
+    title: 'Settings',
+    apiKeyLabel: 'Gemini API Key',
+    apiKeyPlaceholder: 'Paste your API key',
+    test: 'Test key',
+    testing: 'Testing…',
+    testOk: 'Key works!',
+    languageLabel: 'Language',
+    modelLabel: 'Gemini model',
+    save: 'Save',
+    saved: 'Saved',
+    privacyNote:
+      'Your API key is stored only in this browser and is sent only to Google when generating content. It never goes anywhere else.',
+    getKeyHint: 'Get a free key at aistudio.google.com/apikey',
+  },
+
+  sessions: {
+    title: 'Your Adventures',
+    newGame: 'New Adventure',
+    empty: 'No saved games yet. Start a new adventure!',
+    continue: 'Continue',
+    delete: 'Delete',
+    confirmDelete: 'Delete this adventure permanently?',
+    yes: 'Delete',
+    no: 'Cancel',
+    lastPlayed: 'Last played',
+    needKey: 'Set your Gemini API key in Settings before starting.',
+  },
+
+  creation: {
+    title: 'Create your character',
+    intro: "Let's build your hero. Tell me anything to begin.",
+    placeholder: 'Type your reply…',
+    send: 'Send',
+    thinking: 'Thinking…',
+    finish: 'Finish & start adventure',
+    building: 'Building your character sheet…',
+    restart: 'Start over',
+  },
+
+  play: {
+    title: 'Adventure',
+    dmThinking: 'The DM is thinking…',
+    actionPlaceholder: 'What do you do?',
+    send: 'Send',
+    rollPrompt: 'A {ability} check is needed (DC {dc}).',
+    roll: 'Roll d20',
+    rolling: 'Rolling…',
+    youRolled: 'You rolled {roll} {mod} = {total} vs DC {dc}',
+    critSuccess: 'Critical success!',
+    critFail: 'Critical failure!',
+    success: 'Success',
+    failure: 'Failure',
+    proposedChanges: 'Proposed changes',
+    accept: 'Accept',
+    reject: 'Reject',
+    other: 'Something else…',
+    otherPlaceholder: 'Explain what should happen instead…',
+    submit: 'Submit',
+    cancel: 'Cancel',
+    quit: 'Save & exit',
+    hp: 'HP',
+    inventory: 'Inventory',
+    statuses: 'Statuses',
+    abilities: 'Abilities',
+    empty: '(empty)',
+    none: '(none)',
+    defeated: 'You have fallen. The adventure ends here.',
+  },
+
+  errors: {
+    INVALID_KEY: 'Invalid API key. Check it in Settings.',
+    RATE_LIMIT: 'Rate limit reached. Wait a moment and try again.',
+    NETWORK: 'Network error. Check your connection.',
+    MALFORMED_RESPONSE: 'The AI returned an unexpected response. Try again.',
+    NO_KEY: 'No API key set. Add one in Settings.',
+    UNKNOWN: 'Something went wrong. Please try again.',
+    retry: 'Retry',
+  },
+}
+
+export type Dictionary = typeof EN
