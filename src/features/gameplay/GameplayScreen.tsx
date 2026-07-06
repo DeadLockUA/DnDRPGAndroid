@@ -3,11 +3,12 @@ import { useApp } from '../../app/AppContext'
 import type { Navigate } from '../../app/routes'
 import type { ChatMessage } from '../../api/types'
 import { useGameplay } from './useGameplay'
-import CharacterPanel from './CharacterPanel'
 import EnemyPanel from './EnemyPanel'
 import DebugPanel from './DebugPanel'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
+import { abilityModifiers, ABILITIES, formatModifier } from '../../db/models'
+import { abilityName } from '../../i18n'
 import '../../ui/chat.css'
 import './gameplay.css'
 
@@ -32,7 +33,7 @@ export default function GameplayScreen({
 
   const [input, setInput] = useState('')
   const [showDebug, setShowDebug] = useState(false)
-  const [showCharPanel, setShowCharPanel] = useState(false)
+  const [showModal, setShowModal] = useState<'abilities' | 'inventory' | 'enemies' | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -85,21 +86,21 @@ export default function GameplayScreen({
             <button
               className="btn-ghost"
               title={t.play.abilities}
-              onClick={() => setShowCharPanel(true)}
+              onClick={() => setShowModal('abilities')}
             >
               ⚔️
             </button>
             <button
               className="btn-ghost"
               title={t.play.inventory}
-              onClick={() => setShowCharPanel(true)}
+              onClick={() => setShowModal('inventory')}
             >
               🎒
             </button>
             <button
               className="btn-ghost"
               title={t.play.enemies}
-              onClick={() => setShowCharPanel(true)}
+              onClick={() => setShowModal('enemies')}
             >
               👹
             </button>
@@ -204,17 +205,85 @@ export default function GameplayScreen({
         {showDebug && <DebugPanel onClose={() => setShowDebug(false)} t={t} />}
       </div>
 
-      {showCharPanel && (
-        <div className="modal-overlay" onClick={() => setShowCharPanel(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {showModal === 'abilities' && (
+        <div className="modal-overlay" onClick={() => setShowModal(null)}>
+          <div className="modal-content modal-abilities" onClick={(e) => e.stopPropagation()}>
             <button
               className="modal-close"
-              onClick={() => setShowCharPanel(false)}
+              onClick={() => setShowModal(null)}
               aria-label="Close"
             >
               ✕
             </button>
-            <CharacterPanel session={session} t={t} language={language} />
+            <h3>{t.play.abilities}</h3>
+            <div className="ability-grid">
+              {ABILITIES.map((a) => {
+                const mods = abilityModifiers(session.stats)
+                return (
+                  <div key={a} className="ability" title={abilityName(a, language)}>
+                    <span className="ability-key">{a.toUpperCase()}</span>
+                    <span className="ability-score">{session.stats[a]}</span>
+                    <span className="ability-mod">{formatModifier(mods[a])}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModal === 'inventory' && (
+        <div className="modal-overlay" onClick={() => setShowModal(null)}>
+          <div className="modal-content modal-inventory" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setShowModal(null)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <h3>{t.play.inventory}</h3>
+            {session.inventory.length === 0 ? (
+              <p className="dim">{t.play.empty}</p>
+            ) : (
+              <ul className="item-list">
+                {session.inventory.map((i) => (
+                  <li key={i.name} title={i.description}>
+                    <span>{i.name}</span>
+                    <span className="qty">×{i.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showModal === 'enemies' && (
+        <div className="modal-overlay" onClick={() => setShowModal(null)}>
+          <div className="modal-content modal-enemies" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setShowModal(null)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <h3>{t.play.enemies}</h3>
+            <div className="statuses-section">
+              <h4>{t.play.statuses}</h4>
+              {session.statuses.length === 0 ? (
+                <p className="dim">{t.play.none}</p>
+              ) : (
+                <ul className="item-list">
+                  {session.statuses.map((s) => (
+                    <li key={s.name} title={s.description}>
+                      {s.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       )}
