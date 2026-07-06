@@ -6,6 +6,9 @@ import type {
   InventoryRemovePayload,
   StatusAddPayload,
   StatusRemovePayload,
+  EnemyAddPayload,
+  EnemyHpDeltaPayload,
+  EnemyRemovePayload,
 } from '../../api/types'
 
 /**
@@ -17,6 +20,8 @@ export function applyStateUpdates(
   session: GameSession,
   updates: StateUpdate[],
 ): GameSession {
+  // Older saved sessions may predate enemy tracking.
+  if (!session.enemies) session.enemies = []
   for (const update of updates) {
     switch (update.type) {
       case 'hp_delta': {
@@ -69,6 +74,39 @@ export function applyStateUpdates(
         session.statuses = session.statuses.filter((s) => s.name !== p.name)
         break
       }
+      case 'enemy_add': {
+        const p = update.payload as EnemyAddPayload
+        const max = Math.max(1, Math.round(Number(p.maxHp)) || 10)
+        const existing = session.enemies.find((e) => e.name === p.name)
+        if (!existing) {
+          session.enemies.push({
+            name: p.name,
+            hp: { current: max, max },
+            description: p.description ?? '',
+          })
+        }
+        break
+      }
+      case 'enemy_hp_delta': {
+        const p = update.payload as EnemyHpDeltaPayload
+        const enemy = session.enemies.find((e) => e.name === p.name)
+        if (enemy) {
+          enemy.hp.current = Math.max(
+            0,
+            Math.min(enemy.hp.max, enemy.hp.current + (Number(p.amount) || 0)),
+          )
+          // A defeated enemy leaves the field.
+          if (enemy.hp.current <= 0) {
+            session.enemies = session.enemies.filter((e) => e.name !== p.name)
+          }
+        }
+        break
+      }
+      case 'enemy_remove': {
+        const p = update.payload as EnemyRemovePayload
+        session.enemies = session.enemies.filter((e) => e.name !== p.name)
+        break
+      }
     }
   }
   return session
@@ -93,6 +131,17 @@ export function describeStateUpdate(update: StateUpdate): string {
       return `Status: ${(update.payload as StatusAddPayload).name}`
     case 'status_remove':
       return `Remove status: ${(update.payload as StatusRemovePayload).name}`
+    case 'enemy_add': {
+      const p = update.payload as EnemyAddPayload
+      return `⚔ ${p.name} (${Math.max(1, Math.round(Number(p.maxHp)) || 10)} HP)`
+    }
+    case 'enemy_hp_delta': {
+      const p = update.payload as EnemyHpDeltaPayload
+      const amt = Number(p.amount) || 0
+      return `${p.name}: ${amt >= 0 ? `+${amt}` : amt} HP`
+    }
+    case 'enemy_remove':
+      return `☠ ${(update.payload as EnemyRemovePayload).name}`
     default:
       return update.type
   }

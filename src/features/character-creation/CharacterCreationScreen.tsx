@@ -101,6 +101,7 @@ export default function CharacterCreationScreen({
         hp: { current: maxHp, max: maxHp },
         inventory: sheet.inventory ?? [],
         statuses: [],
+        enemies: [],
         messages: [],
         summary: '',
       })

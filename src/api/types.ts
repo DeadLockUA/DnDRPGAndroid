@@ -24,6 +24,12 @@ export interface StatusEffect {
   description: string
 }
 
+export interface Enemy {
+  name: string
+  hp: { current: number; max: number }
+  description?: string
+}
+
 export interface DiceResult {
   ability: AbilityOrNone
   roll: number // raw d20, 1-20
@@ -58,6 +64,9 @@ export type StateUpdateType =
   | 'inventory_remove'
   | 'status_add'
   | 'status_remove'
+  | 'enemy_add'
+  | 'enemy_hp_delta'
+  | 'enemy_remove'
 
 // Payloads are narrow per-type; we keep a discriminated union for safe application.
 export interface HpDeltaPayload {
@@ -79,6 +88,18 @@ export interface StatusAddPayload {
 export interface StatusRemovePayload {
   name: string
 }
+export interface EnemyAddPayload {
+  name: string
+  maxHp: number
+  description?: string
+}
+export interface EnemyHpDeltaPayload {
+  name: string
+  amount: number // negative = damage to the enemy
+}
+export interface EnemyRemovePayload {
+  name: string
+}
 
 export interface StateUpdate {
   type: StateUpdateType
@@ -88,6 +109,9 @@ export interface StateUpdate {
     | InventoryRemovePayload
     | StatusAddPayload
     | StatusRemovePayload
+    | EnemyAddPayload
+    | EnemyHpDeltaPayload
+    | EnemyRemovePayload
   reason: string
 }
 
@@ -126,6 +150,7 @@ export interface GameSession {
   hp: { current: number; max: number }
   inventory: InventoryItem[]
   statuses: StatusEffect[]
+  enemies: Enemy[]
   messages: ChatMessage[]
   summary: string
   createdAt: number

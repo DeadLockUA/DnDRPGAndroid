@@ -4,6 +4,7 @@ import type { Navigate } from '../../app/routes'
 import type { ChatMessage } from '../../api/types'
 import { useGameplay } from './useGameplay'
 import CharacterPanel from './CharacterPanel'
+import EnemyPanel from './EnemyPanel'
 import { describeStateUpdate } from './state-updates'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
@@ -241,6 +242,8 @@ export default function GameplayScreen({
           </button>
         </div>
       </div>
+
+      <EnemyPanel enemies={session.enemies ?? []} t={t} />
     </div>
   )
 }

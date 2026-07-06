@@ -74,6 +74,7 @@ export const EN = {
     inventory: 'Inventory',
     statuses: 'Statuses',
     abilities: 'Abilities',
+    enemies: 'Enemies',
     empty: '(empty)',
     none: '(none)',
     defeated: 'You have fallen. The adventure ends here.',

@@ -12,6 +12,7 @@ function makeSession(): GameSession {
     hp: { current: 10, max: 12 },
     inventory: [{ name: 'Potion', description: 'Heals', quantity: 2 }],
     statuses: [],
+    enemies: [],
     messages: [],
     summary: '',
     createdAt: 0,
@@ -70,6 +71,50 @@ describe('applyStateUpdates', () => {
       },
     ] as StateUpdate[])
     expect(s.inventory.find((i) => i.name === 'Potion')).toBeUndefined()
+  })
+
+  it('spawns enemies and damages them, not the player', () => {
+    const s = makeSession()
+    applyStateUpdates(s, [
+      { type: 'enemy_add', payload: { name: 'Bandit', maxHp: 12 }, reason: 'ambush' },
+    ] as StateUpdate[])
+    expect(s.enemies).toHaveLength(1)
+    expect(s.enemies[0].hp).toEqual({ current: 12, max: 12 })
+
+    applyStateUpdates(s, [
+      { type: 'enemy_hp_delta', payload: { name: 'Bandit', amount: -5 }, reason: 'hit' },
+    ] as StateUpdate[])
+    expect(s.enemies[0].hp.current).toBe(7)
+    // Player untouched.
+    expect(s.hp.current).toBe(10)
+  })
+
+  it('removes an enemy when its HP reaches zero', () => {
+    const s = makeSession()
+    applyStateUpdates(s, [
+      { type: 'enemy_add', payload: { name: 'Rat', maxHp: 4 }, reason: 'x' },
+      { type: 'enemy_hp_delta', payload: { name: 'Rat', amount: -10 }, reason: 'slain' },
+    ] as StateUpdate[])
+    expect(s.enemies).toHaveLength(0)
+  })
+
+  it('does not duplicate an enemy added twice by name', () => {
+    const s = makeSession()
+    applyStateUpdates(s, [
+      { type: 'enemy_add', payload: { name: 'Ogre', maxHp: 20 }, reason: 'a' },
+      { type: 'enemy_add', payload: { name: 'Ogre', maxHp: 20 }, reason: 'b' },
+    ] as StateUpdate[])
+    expect(s.enemies).toHaveLength(1)
+  })
+
+  it('backfills enemies on a legacy session missing the field', () => {
+    const s = makeSession()
+    // Simulate an old saved session with no enemies array.
+    delete (s as { enemies?: unknown }).enemies
+    applyStateUpdates(s, [
+      { type: 'enemy_add', payload: { name: 'Wolf', maxHp: 8 }, reason: 'x' },
+    ] as StateUpdate[])
+    expect(s.enemies).toHaveLength(1)
   })
 
   it('adds and removes status effects idempotently', () => {

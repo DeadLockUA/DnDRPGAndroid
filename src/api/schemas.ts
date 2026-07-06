@@ -47,17 +47,21 @@ export const DM_RESPONSE_SCHEMA = {
               'inventory_remove',
               'status_add',
               'status_remove',
+              'enemy_add',
+              'enemy_hp_delta',
+              'enemy_remove',
             ],
           },
           payload: {
             type: Type.OBJECT,
             description:
-              'For hp_delta: {amount:number}. inventory_add: {name,description,quantity}. inventory_remove: {name,quantity}. status_add: {name,description}. status_remove: {name}.',
+              'hp_delta {amount} (PLAYER hp only). inventory_add {name,description,quantity}. inventory_remove {name,quantity}. status_add {name,description}. status_remove {name}. enemy_add {name,maxHp,description}. enemy_hp_delta {name,amount} (negative=damage to that enemy). enemy_remove {name}.',
             properties: {
               amount: { type: Type.NUMBER },
               name: { type: Type.STRING },
               description: { type: Type.STRING },
               quantity: { type: Type.NUMBER },
+              maxHp: { type: Type.NUMBER },
             },
           },
           reason: { type: Type.STRING },

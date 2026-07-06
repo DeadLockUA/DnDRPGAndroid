@@ -76,6 +76,7 @@ export const RU: Dictionary = {
     inventory: 'Инвентарь',
     statuses: 'Эффекты',
     abilities: 'Характеристики',
+    enemies: 'Противники',
     empty: '(пусто)',
     none: '(нет)',
     defeated: 'Вы пали. На этом приключение заканчивается.',

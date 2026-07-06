@@ -37,6 +37,7 @@ function makeSession(): GameSession {
     hp: { current: 12, max: 12 },
     inventory: [{ name: 'Dagger', description: 'A worn blade', quantity: 1 }],
     statuses: [],
+    enemies: [],
     messages: [],
     summary: '',
     createdAt: 0,

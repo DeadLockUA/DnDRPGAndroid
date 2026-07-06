@@ -23,6 +23,7 @@ function makeSessionData(name: string): NewSessionData {
     hp: { current: 10, max: 10 },
     inventory: [{ name: 'Sword', description: 'A blade', quantity: 1 }],
     statuses: [],
+    enemies: [],
     messages: [],
     summary: '',
   }

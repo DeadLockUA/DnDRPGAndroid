@@ -64,6 +64,7 @@ function seed(overrides: Partial<SeedData> = {}): SeedData {
     hp: { current: 10, max: 10 },
     inventory: [{ name: 'Sword', description: 'Sharp', quantity: 1 }],
     statuses: [],
+    enemies: [],
     messages: [{ role: 'dm', content: 'The tale begins.', timestamp: 0 }],
     summary: '',
   }

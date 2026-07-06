@@ -155,6 +155,8 @@ export function useGameplay(sessionId: string) {
         setPhase('error-loading')
         return
       }
+      // Backfill fields added after this session was first saved.
+      if (!s.enemies) s.enemies = []
       setSession(s)
       if (s.hp.current <= 0) {
         setPhase('defeated')
