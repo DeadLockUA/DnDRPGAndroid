@@ -86,6 +86,8 @@ export const EN = {
     NO_KEY: 'No API key set. Add one in Settings.',
     UNKNOWN: 'Something went wrong. Please try again.',
     retry: 'Retry',
+    retryIn: 'Auto-retry in {sec}s',
+    retrying: 'Retrying…',
   },
 }
 

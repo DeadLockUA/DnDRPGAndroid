@@ -12,7 +12,24 @@ export function classifyGeminiError(error: unknown): GeminiError {
   const message = raw.toLowerCase()
 
   const code = classifyCode(message)
-  return new GeminiError(code, raw)
+  const retryAfterMs =
+    code === 'RATE_LIMIT' ? parseRetryAfterMs(raw) : undefined
+  return new GeminiError(code, raw, retryAfterMs)
+}
+
+/**
+ * Extracts a retry delay (in ms) from a Gemini 429 error. Handles both the
+ * prose "Please retry in 45.287s" and the structured `"retryDelay":"45s"`
+ * forms. Returns undefined when no delay is present.
+ */
+export function parseRetryAfterMs(text: string): number | undefined {
+  const structured = /"?retrydelay"?\s*:?\s*"?(\d+(?:\.\d+)?)s/i.exec(text)
+  if (structured) return Math.round(parseFloat(structured[1]) * 1000)
+
+  const prose = /retry\s+in\s+(\d+(?:\.\d+)?)\s*s/i.exec(text)
+  if (prose) return Math.round(parseFloat(prose[1]) * 1000)
+
+  return undefined
 }
 
 function classifyCode(message: string): GeminiErrorCode {

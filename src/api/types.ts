@@ -143,9 +143,12 @@ export type GeminiErrorCode =
 
 export class GeminiError extends Error {
   code: GeminiErrorCode
-  constructor(code: GeminiErrorCode, message: string) {
+  /** Suggested wait before retrying, in ms (parsed from a 429 response). */
+  retryAfterMs?: number
+  constructor(code: GeminiErrorCode, message: string, retryAfterMs?: number) {
     super(message)
     this.name = 'GeminiError'
     this.code = code
+    this.retryAfterMs = retryAfterMs
   }
 }

@@ -4,6 +4,7 @@ import type { Navigate } from '../../app/routes'
 import type { ChatMessage, CharacterSheet } from '../../api/types'
 import { GeminiError } from '../../api/types'
 import { createSession } from '../../db/game-session'
+import { RetryBanner } from '../../ui/RetryBanner'
 import '../../ui/chat.css'
 
 function now() {
@@ -23,41 +24,62 @@ export default function CharacterCreationScreen({
   const [thinking, setThinking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [retryAfterMs, setRetryAfterMs] = useState<number | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Replays whichever call failed (a reply request or the finish/extract).
+  const lastActionRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages, thinking])
 
   function showError(e: unknown) {
-    const code = e instanceof GeminiError ? e.code : 'UNKNOWN'
-    setError(t.errors[code])
+    if (e instanceof GeminiError) {
+      setError(e.code)
+      setRetryAfterMs(e.retryAfterMs ?? null)
+    } else {
+      setError('UNKNOWN')
+      setRetryAfterMs(null)
+    }
   }
 
-  async function send() {
-    const text = input.trim()
-    if (!text || thinking) return
+  function clearError() {
     setError(null)
-    const next: ChatMessage[] = [
-      ...messages,
-      { role: 'player', content: text, timestamp: now() },
-    ]
-    setMessages(next)
-    setInput('')
+    setRetryAfterMs(null)
+  }
+
+  async function requestReply(history: ChatMessage[]) {
+    clearError()
     setThinking(true)
     try {
-      const reply = await gemini.generateCreationReply(next, language)
-      setMessages([...next, { role: 'dm', content: reply, timestamp: now() }])
+      const reply = await gemini.generateCreationReply(history, language)
+      setMessages([
+        ...history,
+        { role: 'dm', content: reply, timestamp: now() },
+      ])
     } catch (e) {
+      lastActionRef.current = () => void requestReply(history)
       showError(e)
     } finally {
       setThinking(false)
     }
   }
 
+  async function send() {
+    const text = input.trim()
+    if (!text || thinking) return
+    const next: ChatMessage[] = [
+      ...messages,
+      { role: 'player', content: text, timestamp: now() },
+    ]
+    setMessages(next)
+    setInput('')
+    await requestReply(next)
+  }
+
   async function finish() {
     if (finishing || thinking) return
-    setError(null)
+    clearError()
     setFinishing(true)
     try {
       const sheet: CharacterSheet = await gemini.extractCharacterSheet(
@@ -78,9 +100,17 @@ export default function CharacterCreationScreen({
       })
       navigate({ screen: 'play', sessionId: session.id })
     } catch (e) {
+      lastActionRef.current = () => void finish()
       showError(e)
       setFinishing(false)
     }
+  }
+
+  function retry() {
+    const action = lastActionRef.current
+    if (!action || thinking || finishing) return
+    clearError()
+    action()
   }
 
   const canFinish =
@@ -108,7 +138,14 @@ export default function CharacterCreationScreen({
         {finishing && (
           <div className="bubble-thinking">{t.creation.building}</div>
         )}
-        {error && <div className="banner banner-error">{error}</div>}
+        {error && !thinking && !finishing && (
+          <RetryBanner
+            code={error}
+            retryAfterMs={retryAfterMs}
+            onRetry={retry}
+            t={t}
+          />
+        )}
       </div>
 
       <div className="chat-input">

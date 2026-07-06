@@ -6,6 +6,7 @@ import { useGameplay } from './useGameplay'
 import CharacterPanel from './CharacterPanel'
 import { describeStateUpdate } from './state-updates'
 import { useTypewriter } from '../../ui/useTypewriter'
+import { RetryBanner } from '../../ui/RetryBanner'
 import { abilityName, interpolate, type Dictionary } from '../../i18n'
 import { formatModifier } from '../../db/models'
 import type { Language } from '../../api/types'
@@ -26,6 +27,8 @@ export default function GameplayScreen({
     pendingRoll,
     pendingUpdates,
     error,
+    retryAfterMs,
+    retry,
     submitAction,
     roll,
     accept,
@@ -176,7 +179,14 @@ export default function GameplayScreen({
             <div className="bubble bubble-system defeated">{t.play.defeated}</div>
           )}
 
-          {error && <div className="banner banner-error">{t.errors[error as keyof typeof t.errors]}</div>}
+          {error && (
+            <RetryBanner
+              code={error}
+              retryAfterMs={retryAfterMs}
+              onRetry={retry}
+              t={t}
+            />
+          )}
         </div>
 
         <div className="chat-input">

@@ -43,7 +43,12 @@ export function useGameplay(sessionId: string) {
     null,
   )
   const [error, setError] = useState<string | null>(null)
+  const [retryAfterMs, setRetryAfterMs] = useState<number | null>(null)
   const startedRef = useRef(false)
+  // The most recent DM turn, so a failed call can be replayed verbatim.
+  const lastTurnRef = useRef<{ s: GameSession; history: ChatMessage[] } | null>(
+    null,
+  )
 
   const persist = useCallback(async (s: GameSession) => {
     await updateSession(s)
@@ -52,8 +57,13 @@ export function useGameplay(sessionId: string) {
   }, [])
 
   const showError = useCallback((e: unknown) => {
-    const code = e instanceof GeminiError ? e.code : 'UNKNOWN'
-    setError(code)
+    if (e instanceof GeminiError) {
+      setError(e.code)
+      setRetryAfterMs(e.retryAfterMs ?? null)
+    } else {
+      setError('UNKNOWN')
+      setRetryAfterMs(null)
+    }
   }, [])
 
   // Maybe compact old history into a prose summary.
@@ -104,8 +114,10 @@ export function useGameplay(sessionId: string) {
 
   const runDMTurn = useCallback(
     async (s: GameSession, history: ChatMessage[]) => {
+      lastTurnRef.current = { s, history }
       setPhase('thinking')
       setError(null)
+      setRetryAfterMs(null)
       try {
         await maybeSummarize(s)
         const resp = await gemini.generateDMTurn(s, history, language)
@@ -117,6 +129,13 @@ export function useGameplay(sessionId: string) {
     },
     [gemini, language, maybeSummarize, applyDMResponse, showError],
   )
+
+  // Replay the last DM turn (after a rate-limit / network / server error).
+  const retry = useCallback(() => {
+    const last = lastTurnRef.current
+    if (!last || phase === 'thinking') return
+    void runDMTurn(last.s, last.history)
+  }, [phase, runDMTurn])
 
   // Load the session; kick off an opening scene if brand new.
   useEffect(() => {
@@ -230,6 +249,8 @@ export function useGameplay(sessionId: string) {
     pendingRoll,
     pendingUpdates,
     error,
+    retryAfterMs,
+    retry,
     submitAction,
     roll,
     accept,
