@@ -54,6 +54,7 @@ export const EN = {
     actionPlaceholder: 'What do you do?',
     send: 'Send',
     more: 'Show more',
+    collapse: 'Collapse',
     rollNeeded: 'A check is needed.',
     roll: 'Roll d20',
     rolling: 'Rolling…',

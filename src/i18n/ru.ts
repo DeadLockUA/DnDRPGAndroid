@@ -56,6 +56,7 @@ export const RU: Dictionary = {
     actionPlaceholder: 'Что вы делаете?',
     send: 'Отправить',
     more: 'Показать ещё',
+    collapse: 'Свернуть',
     rollNeeded: 'Нужно сделать проверку.',
     roll: 'Бросить d20',
     rolling: 'Бросок…',

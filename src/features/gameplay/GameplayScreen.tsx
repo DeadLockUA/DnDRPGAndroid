@@ -125,12 +125,16 @@ export default function GameplayScreen({
         </div>
 
         <div className="chat-scroll" ref={scrollRef}>
-          {!showAllMessages && session.messages.length > MESSAGES_TO_SHOW && (
+          {session.messages.length > MESSAGES_TO_SHOW && (
             <button
               className="show-more-btn"
-              onClick={() => setShowAllMessages(true)}
+              onClick={() => setShowAllMessages(!showAllMessages)}
             >
-              ↑ {t.play.more} ({session.messages.length - MESSAGES_TO_SHOW})
+              {showAllMessages ? (
+                <>↓ {t.play.collapse}</>
+              ) : (
+                <>↑ {t.play.more} ({session.messages.length - MESSAGES_TO_SHOW})</>
+              )}
             </button>
           )}
 
