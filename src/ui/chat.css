@@ -8,6 +8,8 @@
 }
 
 .chat-topbar {
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -15,10 +17,20 @@
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elev);
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .chat-topbar h2 {
   font-size: 18px;
+  margin: 0;
+  flex: 1;
+}
+
+.chat-topbar .row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .chat-scroll {

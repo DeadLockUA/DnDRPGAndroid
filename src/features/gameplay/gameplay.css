@@ -10,6 +10,8 @@
   height: 100vh;
   height: 100dvh;
   max-width: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .dice-result {
@@ -28,6 +30,47 @@
   font-size: 16px;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--bg-elev);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--accent);
+}
+
 @media (max-width: 720px) {
   .play-layout {
     flex-direction: column;
@@ -38,5 +81,10 @@
   .play-chat {
     height: auto;
     min-height: 60vh;
+  }
+
+  .modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
   }
 }

@@ -32,6 +32,7 @@ export default function GameplayScreen({
 
   const [input, setInput] = useState('')
   const [showDebug, setShowDebug] = useState(false)
+  const [showCharPanel, setShowCharPanel] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -77,12 +78,31 @@ export default function GameplayScreen({
 
   return (
     <div className="play-layout">
-      <CharacterPanel session={session} t={t} language={language} />
-
       <div className="chat-shell play-chat">
         <div className="chat-topbar">
           <h2>{session.characterName}</h2>
           <div className="row">
+            <button
+              className="btn-ghost"
+              title={t.play.abilities}
+              onClick={() => setShowCharPanel(true)}
+            >
+              ⚔️
+            </button>
+            <button
+              className="btn-ghost"
+              title={t.play.inventory}
+              onClick={() => setShowCharPanel(true)}
+            >
+              🎒
+            </button>
+            <button
+              className="btn-ghost"
+              title={t.play.enemies}
+              onClick={() => setShowCharPanel(true)}
+            >
+              👹
+            </button>
             <button
               className="btn-ghost"
               aria-pressed={showDebug}
@@ -183,6 +203,21 @@ export default function GameplayScreen({
 
         {showDebug && <DebugPanel onClose={() => setShowDebug(false)} t={t} />}
       </div>
+
+      {showCharPanel && (
+        <div className="modal-overlay" onClick={() => setShowCharPanel(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setShowCharPanel(false)}
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <CharacterPanel session={session} t={t} language={language} />
+          </div>
+        </div>
+      )}
 
       <EnemyPanel enemies={session.enemies ?? []} t={t} />
     </div>
