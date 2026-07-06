@@ -80,6 +80,12 @@ export const RU: Dictionary = {
     empty: '(пусто)',
     none: '(нет)',
     defeated: 'Вы пали. На этом приключение заканчивается.',
+    debug: 'Отладка',
+    debugEmpty: 'Пока не было запросов к ИИ.',
+    debugClear: 'Очистить',
+    debugRequest: 'Запрос',
+    debugResponse: 'Ответ',
+    debugSystem: 'Системный промпт',
   },
 
   errors: {

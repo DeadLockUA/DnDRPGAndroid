@@ -9,6 +9,7 @@ import type {
 } from './types'
 import { GeminiError } from './types'
 import { classifyGeminiError } from './error-handler'
+import { pushDebug } from './debug-log'
 import {
   DM_RESPONSE_SCHEMA,
   CHARACTER_SHEET_SCHEMA,
@@ -28,6 +29,25 @@ function toContents(messages: ChatMessage[]): Content[] {
     role: m.role === 'dm' ? 'model' : 'user',
     parts: [{ text: m.content }],
   }))
+}
+
+type GenParams = Parameters<GoogleGenAI['models']['generateContent']>[0]
+
+/** Flatten request contents into readable text for the debug panel. */
+function contentsToText(contents: GenParams['contents']): string {
+  if (typeof contents === 'string') return contents
+  if (Array.isArray(contents)) {
+    return contents
+      .map((c) => {
+        if (typeof c === 'string') return c
+        const role = (c as Content).role ?? '?'
+        const parts = (c as Content).parts ?? []
+        const text = parts.map((p) => ('text' in p ? p.text : '')).join('')
+        return `[${role}] ${text}`
+      })
+      .join('\n\n')
+  }
+  return JSON.stringify(contents)
 }
 
 export class GeminiClient {
@@ -57,10 +77,34 @@ export class GeminiClient {
     return this.ai
   }
 
+  /** Runs a generateContent call and records the raw request/response for debug. */
+  private async run(kind: string, params: GenParams) {
+    const model = this.settings.geminiModel
+    const sys =
+      typeof params.config?.systemInstruction === 'string'
+        ? params.config.systemInstruction
+        : undefined
+    const contents = contentsToText(params.contents)
+    try {
+      const res = await this.client().models.generateContent(params)
+      pushDebug({ kind, model, systemInstruction: sys, contents, response: res.text ?? '' })
+      return res
+    } catch (error) {
+      pushDebug({
+        kind,
+        model,
+        systemInstruction: sys,
+        contents,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
+  }
+
   /** Lightweight call to confirm the key/model work. */
   async validateApiKey(): Promise<void> {
     try {
-      const res = await this.client().models.generateContent({
+      const res = await this.run('validate', {
         model: this.settings.geminiModel,
         contents: 'ping',
         config: { maxOutputTokens: 8 },
@@ -108,7 +152,7 @@ export class GeminiClient {
   ): Promise<DMResponse> {
     let text: string
     try {
-      const res = await this.client().models.generateContent({
+      const res = await this.run('dm-turn', {
         model: this.settings.geminiModel,
         contents,
         config: {
@@ -131,7 +175,7 @@ export class GeminiClient {
   ): Promise<CreationReply> {
     let text: string
     try {
-      const res = await this.client().models.generateContent({
+      const res = await this.run('creation', {
         model: this.settings.geminiModel,
         contents: toContents(history),
         config: {
@@ -162,7 +206,7 @@ export class GeminiClient {
     ]
     let text: string
     try {
-      const res = await this.client().models.generateContent({
+      const res = await this.run('extract', {
         model: this.settings.geminiModel,
         contents,
         config: {
@@ -180,7 +224,7 @@ export class GeminiClient {
   /** Compact a transcript into a prose summary. */
   async summarize(transcript: string, language: Language): Promise<string> {
     try {
-      const res = await this.client().models.generateContent({
+      const res = await this.run('summary', {
         model: this.settings.geminiModel,
         contents: transcript,
         config: { systemInstruction: buildSummaryPrompt(language) },

@@ -5,6 +5,7 @@ import type { ChatMessage } from '../../api/types'
 import { useGameplay } from './useGameplay'
 import CharacterPanel from './CharacterPanel'
 import EnemyPanel from './EnemyPanel'
+import DebugPanel from './DebugPanel'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
 import { abilityName, interpolate, type Dictionary } from '../../i18n'
@@ -33,6 +34,7 @@ export default function GameplayScreen({
   } = useGameplay(sessionId)
 
   const [input, setInput] = useState('')
+  const [showDebug, setShowDebug] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -83,9 +85,19 @@ export default function GameplayScreen({
       <div className="chat-shell play-chat">
         <div className="chat-topbar">
           <h2>{session.characterName}</h2>
-          <button className="btn-ghost" onClick={() => navigate({ screen: 'sessions' })}>
-            {t.play.quit}
-          </button>
+          <div className="row">
+            <button
+              className="btn-ghost"
+              aria-pressed={showDebug}
+              onClick={() => setShowDebug((v) => !v)}
+              title={t.play.debug}
+            >
+              🐞
+            </button>
+            <button className="btn-ghost" onClick={() => navigate({ screen: 'sessions' })}>
+              {t.play.quit}
+            </button>
+          </div>
         </div>
 
         <div className="chat-scroll" ref={scrollRef}>
@@ -179,6 +191,8 @@ export default function GameplayScreen({
             {t.play.send}
           </button>
         </div>
+
+        {showDebug && <DebugPanel onClose={() => setShowDebug(false)} t={t} />}
       </div>
 
       <EnemyPanel enemies={session.enemies ?? []} t={t} />

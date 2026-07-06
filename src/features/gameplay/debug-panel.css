@@ -1,0 +1,95 @@
+.debug-panel {
+  border-top: 2px solid var(--accent-strong);
+  background: #0b0f0d;
+  max-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.debug-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+}
+
+.debug-head .row {
+  gap: 6px;
+}
+
+.debug-head button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.debug-body {
+  overflow-y: auto;
+  padding: 10px 14px;
+}
+
+.debug-entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  background: var(--bg);
+}
+
+.debug-entry > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.debug-kind {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.debug-model {
+  color: var(--text-dim);
+}
+
+.debug-time {
+  color: var(--text-dim);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.debug-err-tag {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.debug-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  padding: 6px 10px 2px;
+}
+
+.debug-entry pre {
+  margin: 0 10px 8px;
+  padding: 8px 10px;
+  background: #05100a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Consolas', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.debug-entry pre.debug-err {
+  color: var(--danger);
+  border-color: rgba(255, 107, 107, 0.4);
+}

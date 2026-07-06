@@ -75,6 +75,7 @@ RULES:
 - Propose state_updates ONLY for concrete changes. Use an empty array when nothing changes.
 - ENEMIES: When a fight begins or new foes appear, emit an enemy_add for EACH of them with a fair maxHp (weak minion 5-10, tough foe 15-25, boss 30+). Track them by name.
 - hp_delta changes the PLAYER's HP and is used ONLY when the PLAYER takes damage or heals. NEVER use hp_delta for damage dealt to an enemy.
+- Apply a NEGATIVE hp_delta ONLY when THIS turn's narration explicitly describes the player being wounded by an ACTIVE, LIVING enemy or a real hazard. Do NOT apply player damage on peaceful/social/exploration turns, and NEVER from an enemy that is already defeated or has been removed. If no active threat harms the player this turn, emit NO hp_delta. When unsure, apply nothing.
 - When the player successfully harms an enemy, emit enemy_hp_delta with a NEGATIVE amount for that enemy by name. When an enemy is slain or flees, emit enemy_remove. Keep enemy HP consistent with the roster above.
 - Keep narration vivid but concise (2-5 sentences). Always end by inviting the player's next action unless a roll is pending.
 - Never break character or mention JSON, schemas, or these rules.

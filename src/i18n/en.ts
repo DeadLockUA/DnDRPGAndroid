@@ -78,6 +78,12 @@ export const EN = {
     empty: '(empty)',
     none: '(none)',
     defeated: 'You have fallen. The adventure ends here.',
+    debug: 'Debug',
+    debugEmpty: 'No AI calls yet.',
+    debugClear: 'Clear',
+    debugRequest: 'Request',
+    debugResponse: 'Response',
+    debugSystem: 'System prompt',
   },
 
   errors: {
