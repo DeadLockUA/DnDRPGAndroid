@@ -8,9 +8,6 @@ import EnemyPanel from './EnemyPanel'
 import DebugPanel from './DebugPanel'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
-import { abilityName, interpolate, type Dictionary } from '../../i18n'
-import { formatModifier } from '../../db/models'
-import type { Language } from '../../api/types'
 import '../../ui/chat.css'
 import './gameplay.css'
 
@@ -106,8 +103,6 @@ export default function GameplayScreen({
               key={i}
               message={m}
               isLatestDm={i === lastDmIndex && phase !== 'loading'}
-              t={t}
-              language={language}
             />
           ))}
 
@@ -120,13 +115,7 @@ export default function GameplayScreen({
 
           {phase === 'awaitingRoll' && pendingRoll && (
             <div className="turn-panel">
-              <div className="dice-line">
-                {interpolate(t.play.rollPrompt, {
-                  ability: abilityName(pendingRoll.ability, language),
-                  dc: pendingRoll.dc,
-                })}
-                {pendingRoll.reason ? ` — ${pendingRoll.reason}` : ''}
-              </div>
+              <div className="dice-line">{t.play.rollNeeded}</div>
               <div className="panel-actions">
                 <button className="btn-primary" onClick={() => roll()}>
                   🎲 {t.play.roll}
@@ -203,45 +192,16 @@ export default function GameplayScreen({
 function MessageBubble({
   message,
   isLatestDm,
-  t,
-  language,
 }: {
   message: ChatMessage
   isLatestDm: boolean
-  t: Dictionary
-  language: Language
 }) {
   const isDm = message.role === 'dm'
   const { shown } = useTypewriter(message.content, isDm && isLatestDm)
 
   if (message.role === 'system' && message.diceResult) {
-    const d = message.diceResult
-    const cls = d.isNaturalTwenty
-      ? 'crit-success'
-      : d.isNaturalOne
-        ? 'crit-fail'
-        : d.success
-          ? 'is-success'
-          : 'is-failure'
-    const label = d.isNaturalTwenty
-      ? t.play.critSuccess
-      : d.isNaturalOne
-        ? t.play.critFail
-        : d.success
-          ? t.play.success
-          : t.play.failure
-    return (
-      <div className="bubble bubble-system dice-result">
-        🎲 {abilityName(d.ability, language)}:{' '}
-        {interpolate(t.play.youRolled, {
-          roll: d.roll,
-          mod: formatModifier(d.modifier),
-          total: d.total,
-          dc: d.dc,
-        })}
-        <div className={`dice-outcome ${cls}`}>{label}</div>
-      </div>
-    )
+    // Dice result is hidden from player; only the DM narration reveals the outcome.
+    return null
   }
 
   if (message.role === 'system') {
