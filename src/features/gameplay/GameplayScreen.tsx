@@ -5,7 +5,6 @@ import type { ChatMessage } from '../../api/types'
 import { useGameplay } from './useGameplay'
 import CharacterPanel from './CharacterPanel'
 import EnemyPanel from './EnemyPanel'
-import { describeStateUpdate } from './state-updates'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
 import { abilityName, interpolate, type Dictionary } from '../../i18n'
@@ -26,31 +25,25 @@ export default function GameplayScreen({
     session,
     phase,
     pendingRoll,
-    pendingUpdates,
     error,
     retryAfterMs,
     retry,
     submitAction,
     roll,
-    accept,
-    reject,
-    other,
   } = useGameplay(sessionId)
 
   const [input, setInput] = useState('')
-  const [otherMode, setOtherMode] = useState(false)
-  const [otherText, setOtherText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
-  }, [session?.messages.length, phase, pendingUpdates, pendingRoll])
+  }, [session?.messages.length, phase, pendingRoll])
 
   // Return focus to the action box when it's the player's turn again.
   useEffect(() => {
-    if (phase === 'idle' && !otherMode) inputRef.current?.focus()
-  }, [phase, otherMode])
+    if (phase === 'idle') inputRef.current?.focus()
+  }, [phase])
 
   if (phase === 'error-loading') {
     return (
@@ -81,14 +74,6 @@ export default function GameplayScreen({
     if (!text) return
     setInput('')
     submitAction(text)
-  }
-
-  function handleOther() {
-    const text = otherText.trim()
-    if (!text) return
-    setOtherText('')
-    setOtherMode(false)
-    other(text)
   }
 
   return (
@@ -136,53 +121,6 @@ export default function GameplayScreen({
                 </button>
               </div>
               <span className="hint">{t.play.orActInstead}</span>
-            </div>
-          )}
-
-          {phase === 'awaitingConfirm' && pendingUpdates && (
-            <div className="turn-panel">
-              <strong>{t.play.proposedChanges}</strong>
-              <ul className="updates-list">
-                {pendingUpdates.map((u, i) => (
-                  <li key={i}>
-                    <span>{describeStateUpdate(u)}</span>
-                    <span className="reason">{u.reason}</span>
-                  </li>
-                ))}
-              </ul>
-              {otherMode ? (
-                <div className="stack">
-                  <textarea
-                    value={otherText}
-                    placeholder={t.play.otherPlaceholder}
-                    onChange={(e) => setOtherText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') setOtherMode(false)
-                    }}
-                    autoFocus
-                  />
-                  <div className="panel-actions">
-                    <button className="btn-primary" onClick={handleOther} disabled={!otherText.trim()}>
-                      {t.play.submit}
-                    </button>
-                    <button className="btn-ghost" onClick={() => setOtherMode(false)}>
-                      {t.play.cancel}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="panel-actions">
-                  <button className="btn-primary" onClick={accept}>
-                    ✓ {t.play.accept}
-                  </button>
-                  <button className="btn-ghost" onClick={reject}>
-                    ✗ {t.play.reject}
-                  </button>
-                  <button className="btn-ghost" onClick={() => setOtherMode(true)}>
-                    {t.play.other}
-                  </button>
-                </div>
-              )}
             </div>
           )}
 

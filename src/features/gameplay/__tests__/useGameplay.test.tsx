@@ -85,8 +85,8 @@ async function mountFor(sessionId: string) {
   return view
 }
 
-describe('useGameplay — dice → updates → accept', () => {
-  it('rolls, then applies and persists accepted HP damage', async () => {
+describe('useGameplay — dice → auto-applied updates', () => {
+  it('rolls, then auto-applies and persists HP damage', async () => {
     gemini.generateDMTurn
       .mockResolvedValueOnce(needsRoll())
       .mockResolvedValueOnce(
@@ -105,12 +105,7 @@ describe('useGameplay — dice → updates → accept', () => {
     await act(async () => {
       await result.current.roll()
     })
-    expect(result.current.phase).toBe('awaitingConfirm')
-    expect(result.current.pendingUpdates).toHaveLength(1)
-
-    await act(async () => {
-      await result.current.accept()
-    })
+    // No confirmation step — updates apply immediately.
     expect(result.current.phase).toBe('idle')
     expect(result.current.session?.hp.current).toBe(7)
 
@@ -121,6 +116,25 @@ describe('useGameplay — dice → updates → accept', () => {
     expect(
       reloaded?.messages.some((m: ChatMessage) => m.diceResult?.ability === 'dex'),
     ).toBe(true)
+  })
+
+  it('auto-applies enemy damage from a successful hit without touching the player', async () => {
+    gemini.generateDMTurn.mockResolvedValueOnce(
+      withUpdates([
+        { type: 'enemy_add', payload: { name: 'Bandit', maxHp: 10 }, reason: 'spawn' },
+        { type: 'enemy_hp_delta', payload: { name: 'Bandit', amount: -4 }, reason: 'stab' },
+      ]),
+    )
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I stab the bandit')
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(result.current.session?.enemies).toHaveLength(1)
+    expect(result.current.session?.enemies[0].hp.current).toBe(6)
+    expect(result.current.session?.hp.current).toBe(10) // player untouched
   })
 
   it('lets the player act instead of rolling, discarding the pending roll', async () => {
@@ -144,7 +158,7 @@ describe('useGameplay — dice → updates → accept', () => {
     expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
   })
 
-  it('goes to defeated when accepted damage drops HP to 0', async () => {
+  it('goes to defeated when auto-applied damage drops HP to 0', async () => {
     gemini.generateDMTurn.mockResolvedValueOnce(
       withUpdates([{ type: 'hp_delta', payload: { amount: -50 }, reason: 'crush' }]),
     )
@@ -153,11 +167,6 @@ describe('useGameplay — dice → updates → accept', () => {
 
     await act(async () => {
       await result.current.submitAction('I taunt the dragon')
-    })
-    expect(result.current.phase).toBe('awaitingConfirm')
-
-    await act(async () => {
-      await result.current.accept()
     })
     expect(result.current.phase).toBe('defeated')
     expect(result.current.session?.hp.current).toBe(0)
@@ -176,66 +185,6 @@ describe('useGameplay — opening scene', () => {
     // The narration is still shown.
     expect(
       result.current.session?.messages.some((m) => m.role === 'dm'),
-    ).toBe(true)
-  })
-})
-
-describe('useGameplay — reject & other', () => {
-  it('reject does not apply updates and asks the DM again', async () => {
-    gemini.generateDMTurn
-      .mockResolvedValueOnce(
-        withUpdates([
-          { type: 'inventory_remove', payload: { name: 'Sword', quantity: 1 }, reason: 'stolen' },
-        ]),
-      )
-      .mockResolvedValueOnce(plain('A different twist.'))
-
-    const s = await createSession(seed())
-    const { result } = await mountFor(s.id)
-
-    await act(async () => {
-      await result.current.submitAction('I confront the thief')
-    })
-    expect(result.current.phase).toBe('awaitingConfirm')
-
-    await act(async () => {
-      await result.current.reject()
-    })
-    expect(result.current.phase).toBe('idle')
-    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
-    // Sword NOT removed.
-    expect(
-      result.current.session?.inventory.find((i) => i.name === 'Sword'),
-    ).toBeDefined()
-  })
-
-  it('other sends the player note and triggers a new DM turn', async () => {
-    gemini.generateDMTurn
-      .mockResolvedValueOnce(
-        withUpdates([{ type: 'hp_delta', payload: { amount: -4 }, reason: 'trap' }]),
-      )
-      .mockResolvedValueOnce(plain('You dodge instead.'))
-
-    const s = await createSession(seed())
-    const { result } = await mountFor(s.id)
-
-    await act(async () => {
-      await result.current.submitAction('I step forward')
-    })
-    expect(result.current.phase).toBe('awaitingConfirm')
-
-    await act(async () => {
-      await result.current.other('I want to dodge, not take damage')
-    })
-    expect(result.current.phase).toBe('idle')
-    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
-    // No damage applied (updates were discarded).
-    expect(result.current.session?.hp.current).toBe(10)
-    // The player's note is in history.
-    expect(
-      result.current.session?.messages.some(
-        (m) => m.role === 'player' && m.content.includes('dodge'),
-      ),
     ).toBe(true)
   })
 })

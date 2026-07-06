@@ -4,7 +4,6 @@ import type {
   GameSession,
   ChatMessage,
   DiceRequest,
-  StateUpdate,
   DiceResult,
 } from '../../api/types'
 import { GeminiError } from '../../api/types'
@@ -17,7 +16,6 @@ export type Phase =
   | 'idle' // awaiting player action
   | 'thinking' // awaiting a DM call
   | 'awaitingRoll' // DM asked for a dice roll
-  | 'awaitingConfirm' // DM proposed state_updates
   | 'defeated'
   | 'error-loading'
 
@@ -39,9 +37,6 @@ export function useGameplay(sessionId: string) {
   const [session, setSession] = useState<GameSession | null>(null)
   const [phase, setPhase] = useState<Phase>('loading')
   const [pendingRoll, setPendingRoll] = useState<DiceRequest | null>(null)
-  const [pendingUpdates, setPendingUpdates] = useState<StateUpdate[] | null>(
-    null,
-  )
   const [error, setError] = useState<string | null>(null)
   const [retryAfterMs, setRetryAfterMs] = useState<number | null>(null)
   const startedRef = useRef(false)
@@ -98,24 +93,25 @@ export function useGameplay(sessionId: string) {
 
       if (allowDice && resp.dice_request?.needed) {
         setPendingRoll(resp.dice_request)
-        setPendingUpdates(null)
         await persist(s)
         setPhase('awaitingRoll')
         return
       }
 
+      // Apply any proposed changes automatically — no confirmation step.
       if (resp.state_updates && resp.state_updates.length > 0) {
-        setPendingUpdates(resp.state_updates)
-        setPendingRoll(null)
-        await persist(s)
-        setPhase('awaitingConfirm')
-        return
+        applyStateUpdates(s, resp.state_updates)
+        for (let i = s.messages.length - 1; i >= 0; i--) {
+          if (s.messages[i].role === 'dm') {
+            s.messages[i].stateUpdatesApplied = true
+            break
+          }
+        }
       }
 
       setPendingRoll(null)
-      setPendingUpdates(null)
       await persist(s)
-      setPhase('idle')
+      setPhase(s.hp.current <= 0 ? 'defeated' : 'idle')
     },
     [persist],
   )
@@ -213,64 +209,14 @@ export function useGameplay(sessionId: string) {
     return result
   }, [session, pendingRoll, phase, runDMTurn])
 
-  // Accept the proposed state updates.
-  const accept = useCallback(async () => {
-    if (!session || !pendingUpdates || phase !== 'awaitingConfirm') return
-    applyStateUpdates(session, pendingUpdates)
-    // Mark the most recent DM message as applied.
-    for (let i = session.messages.length - 1; i >= 0; i--) {
-      if (session.messages[i].role === 'dm') {
-        session.messages[i].stateUpdatesApplied = true
-        break
-      }
-    }
-    setPendingUpdates(null)
-    await persist(session)
-    if (session.hp.current <= 0) {
-      setPhase('defeated')
-    } else {
-      setPhase('idle')
-    }
-  }, [session, pendingUpdates, phase, persist])
-
-  // Reject: ask the DM for a different outcome for the SAME roll/action.
-  const reject = useCallback(async () => {
-    if (!session || !pendingUpdates || phase !== 'awaitingConfirm') return
-    session.messages.push({
-      role: 'system',
-      content:
-        'The player rejects the proposed outcome. Keep the same dice result and action, but narrate a different consequence and propose alternative state changes (or none).',
-      timestamp: ts(),
-    })
-    setPendingUpdates(null)
-    setSession({ ...session })
-    await runDMTurn(session, historyForModel(session))
-  }, [session, pendingUpdates, phase, runDMTurn])
-
-  // Other: player negotiates with free text.
-  const other = useCallback(
-    async (text: string) => {
-      if (!session || !pendingUpdates || phase !== 'awaitingConfirm') return
-      session.messages.push({ role: 'player', content: text, timestamp: ts() })
-      setPendingUpdates(null)
-      setSession({ ...session })
-      await runDMTurn(session, historyForModel(session))
-    },
-    [session, pendingUpdates, phase, runDMTurn],
-  )
-
   return {
     session,
     phase,
     pendingRoll,
-    pendingUpdates,
     error,
     retryAfterMs,
     retry,
     submitAction,
     roll,
-    accept,
-    reject,
-    other,
   }
 }
