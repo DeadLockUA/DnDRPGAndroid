@@ -40,10 +40,16 @@ export default function GameplayScreen({
   const [otherMode, setOtherMode] = useState(false)
   const [otherText, setOtherText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [session?.messages.length, phase, pendingUpdates, pendingRoll])
+
+  // Return focus to the action box when it's the player's turn again.
+  useEffect(() => {
+    if (phase === 'idle' && !otherMode) inputRef.current?.focus()
+  }, [phase, otherMode])
 
   if (phase === 'error-loading') {
     return (
@@ -108,7 +114,7 @@ export default function GameplayScreen({
           ))}
 
           {phase === 'thinking' && (
-            <div className="bubble-thinking">
+            <div className="bubble-thinking" role="status" aria-live="polite">
               <span className="spinner" />
               {t.play.dmThinking}
             </div>
@@ -148,6 +154,9 @@ export default function GameplayScreen({
                     value={otherText}
                     placeholder={t.play.otherPlaceholder}
                     onChange={(e) => setOtherText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setOtherMode(false)
+                    }}
                     autoFocus
                   />
                   <div className="panel-actions">
@@ -176,7 +185,23 @@ export default function GameplayScreen({
           )}
 
           {phase === 'defeated' && (
-            <div className="bubble bubble-system defeated">{t.play.defeated}</div>
+            <div className="turn-panel defeated-panel" role="status">
+              <div className="defeated-text">{t.play.defeated}</div>
+              <div className="panel-actions">
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate({ screen: 'creation' })}
+                >
+                  ✦ {t.sessions.newGame}
+                </button>
+                <button
+                  className="btn-ghost"
+                  onClick={() => navigate({ screen: 'sessions' })}
+                >
+                  {t.nav.home}
+                </button>
+              </div>
+            </div>
           )}
 
           {error && (
@@ -191,9 +216,11 @@ export default function GameplayScreen({
 
         <div className="chat-input">
           <textarea
+            ref={inputRef}
             value={input}
             placeholder={t.play.actionPlaceholder}
             disabled={phase !== 'idle'}
+            aria-label={t.play.actionPlaceholder}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

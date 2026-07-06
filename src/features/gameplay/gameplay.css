@@ -1,12 +1,14 @@
 .play-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 .play-chat {
   flex: 1;
   height: 100vh;
+  height: 100dvh;
   max-width: none;
 }
 
@@ -15,11 +17,15 @@
   line-height: 1.6;
 }
 
-.defeated {
+.defeated-panel {
+  border-color: var(--danger);
+  align-items: flex-start;
+}
+
+.defeated-text {
   color: var(--danger);
   font-family: 'Georgia', serif;
   font-size: 16px;
-  border-color: var(--danger);
 }
 
 @media (max-width: 720px) {

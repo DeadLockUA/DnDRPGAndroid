@@ -46,7 +46,7 @@ export function RetryBanner({
   const counting = !!retryAfterMs && remaining > 0
 
   return (
-    <div className="banner banner-error retry-banner">
+    <div className="banner banner-error retry-banner" role="alert">
       <span>{message}</span>
       <div className="retry-actions">
         {counting && (

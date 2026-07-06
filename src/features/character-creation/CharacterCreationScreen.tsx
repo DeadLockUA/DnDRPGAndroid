@@ -134,9 +134,15 @@ export default function CharacterCreationScreen({
             {m.content}
           </div>
         ))}
-        {thinking && <div className="bubble-thinking">{t.creation.thinking}</div>}
+        {thinking && (
+          <div className="bubble-thinking" role="status" aria-live="polite">
+            {t.creation.thinking}
+          </div>
+        )}
         {finishing && (
-          <div className="bubble-thinking">{t.creation.building}</div>
+          <div className="bubble-thinking" role="status" aria-live="polite">
+            {t.creation.building}
+          </div>
         )}
         {error && !thinking && !finishing && (
           <RetryBanner
