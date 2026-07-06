@@ -53,6 +53,7 @@ export const EN = {
     dmThinking: 'The DM is thinking…',
     actionPlaceholder: 'What do you do?',
     send: 'Send',
+    more: 'Show more',
     rollNeeded: 'A check is needed.',
     roll: 'Roll d20',
     rolling: 'Rolling…',

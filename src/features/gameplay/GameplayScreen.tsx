@@ -33,8 +33,11 @@ export default function GameplayScreen({
   const [input, setInput] = useState('')
   const [showDebug, setShowDebug] = useState(false)
   const [showModal, setShowModal] = useState<'abilities' | 'inventory' | 'enemies' | null>(null)
+  const [showAllMessages, setShowAllMessages] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  const MESSAGES_TO_SHOW = 2
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
@@ -61,6 +64,10 @@ export default function GameplayScreen({
   if (!session) {
     return <div className="center-screen">{t.loading}</div>
   }
+
+  const visibleMessages = showAllMessages
+    ? session.messages
+    : session.messages.slice(-MESSAGES_TO_SHOW)
 
   const lastDmIndex = (() => {
     for (let i = session.messages.length - 1; i >= 0; i--) {
@@ -118,13 +125,25 @@ export default function GameplayScreen({
         </div>
 
         <div className="chat-scroll" ref={scrollRef}>
-          {session.messages.map((m, i) => (
-            <MessageBubble
-              key={i}
-              message={m}
-              isLatestDm={i === lastDmIndex && phase !== 'loading'}
-            />
-          ))}
+          {!showAllMessages && session.messages.length > MESSAGES_TO_SHOW && (
+            <button
+              className="show-more-btn"
+              onClick={() => setShowAllMessages(true)}
+            >
+              ↑ {t.play.more} ({session.messages.length - MESSAGES_TO_SHOW})
+            </button>
+          )}
+
+          {visibleMessages.map((m, i) => {
+            const actualIndex = showAllMessages ? session.messages.indexOf(m) : session.messages.length - MESSAGES_TO_SHOW + i
+            return (
+              <MessageBubble
+                key={i}
+                message={m}
+                isLatestDm={actualIndex === lastDmIndex && phase !== 'loading'}
+              />
+            )
+          })}
 
           {phase === 'thinking' && (
             <div className="bubble-thinking" role="status" aria-live="polite">

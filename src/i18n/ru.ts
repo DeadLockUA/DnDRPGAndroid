@@ -55,6 +55,7 @@ export const RU: Dictionary = {
     dmThinking: 'Мастер думает…',
     actionPlaceholder: 'Что вы делаете?',
     send: 'Отправить',
+    more: 'Показать ещё',
     rollNeeded: 'Нужно сделать проверку.',
     roll: 'Бросить d20',
     rolling: 'Бросок…',
