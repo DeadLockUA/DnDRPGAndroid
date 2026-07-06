@@ -55,8 +55,114 @@
 }
 
 .modal-abilities {
-  max-width: 400px;
-  min-width: 300px;
+  max-width: 500px;
+  min-width: 350px;
+}
+
+.char-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sheet-title {
+  margin: 0;
+  font-size: 22px;
+  color: var(--gold);
+  font-family: 'Georgia', serif;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+}
+
+.sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.sheet-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  width: 60px;
+  font-weight: 600;
+}
+
+.sheet-value {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.sheet-value-with-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-bar {
+  flex: 1;
+  height: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  min-width: 150px;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b6b, #ffb347, #4ade80);
+  transition: width 0.3s ease;
+}
+
+.abilities-section {
+  border-top: 2px solid var(--border);
+  padding-top: 16px;
+}
+
+.abilities-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ability-row {
+  display: grid;
+  grid-template-columns: 50px 35px 1fr 40px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.ability-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.ability-score {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.ability-mod {
+  font-size: 12px;
+  color: var(--accent);
+  text-align: right;
+  font-weight: 600;
 }
 
 .modal-inventory {

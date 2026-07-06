@@ -8,7 +8,6 @@ import DebugPanel from './DebugPanel'
 import { useTypewriter } from '../../ui/useTypewriter'
 import { RetryBanner } from '../../ui/RetryBanner'
 import { abilityModifiers, ABILITIES, formatModifier } from '../../db/models'
-import { abilityName } from '../../i18n'
 import '../../ui/chat.css'
 import './gameplay.css'
 
@@ -19,7 +18,7 @@ export default function GameplayScreen({
   sessionId: string
   navigate: Navigate
 }) {
-  const { t, language } = useApp()
+  const { t } = useApp()
   const {
     session,
     phase,
@@ -215,18 +214,37 @@ export default function GameplayScreen({
             >
               ✕
             </button>
-            <h3>{t.play.abilities}</h3>
-            <div className="ability-grid">
-              {ABILITIES.map((a) => {
-                const mods = abilityModifiers(session.stats)
-                return (
-                  <div key={a} className="ability" title={abilityName(a, language)}>
-                    <span className="ability-key">{a.toUpperCase()}</span>
-                    <span className="ability-score">{session.stats[a]}</span>
-                    <span className="ability-mod">{formatModifier(mods[a])}</span>
+            <div className="char-sheet">
+              <h3 className="sheet-title">{session.characterName}</h3>
+
+              <div className="sheet-row">
+                <span className="sheet-label">{t.play.hp}</span>
+                <div className="sheet-value-with-bar">
+                  <span className="sheet-value">{session.hp.current} / {session.hp.max}</span>
+                  <div className="stat-bar">
+                    <div className="stat-bar-fill" style={{ width: `${Math.max(0, (session.hp.current / session.hp.max) * 100)}%` }} />
                   </div>
-                )
-              })}
+                </div>
+              </div>
+
+              <div className="abilities-section">
+                <div className="abilities-grid">
+                  {ABILITIES.map((a) => {
+                    const mods = abilityModifiers(session.stats)
+                    const pct = Math.max(0, ((session.stats[a] - 3) / 15) * 100)
+                    return (
+                      <div key={a} className="ability-row">
+                        <span className="ability-label">{a.toUpperCase()}</span>
+                        <span className="ability-score">{session.stats[a]}</span>
+                        <div className="stat-bar">
+                          <div className="stat-bar-fill" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="ability-mod">{formatModifier(mods[a])}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
