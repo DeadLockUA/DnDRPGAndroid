@@ -134,6 +134,7 @@ export default function GameplayScreen({
                   🎲 {t.play.roll}
                 </button>
               </div>
+              <span className="hint">{t.play.orActInstead}</span>
             </div>
           )}
 
@@ -219,7 +220,7 @@ export default function GameplayScreen({
             ref={inputRef}
             value={input}
             placeholder={t.play.actionPlaceholder}
-            disabled={phase !== 'idle'}
+            disabled={phase !== 'idle' && phase !== 'awaitingRoll'}
             aria-label={t.play.actionPlaceholder}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -232,7 +233,9 @@ export default function GameplayScreen({
           <button
             className="btn-primary"
             onClick={handleSend}
-            disabled={phase !== 'idle' || !input.trim()}
+            disabled={
+              (phase !== 'idle' && phase !== 'awaitingRoll') || !input.trim()
+            }
           >
             {t.play.send}
           </button>

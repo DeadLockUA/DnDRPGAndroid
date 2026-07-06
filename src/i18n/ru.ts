@@ -58,6 +58,7 @@ export const RU: Dictionary = {
     rollPrompt: 'Нужна проверка {ability} (Сл {dc}).',
     roll: 'Бросить d20',
     rolling: 'Бросок…',
+    orActInstead: 'Или опишите другое действие ниже — бросать не обязательно.',
     youRolled: 'Выпало {roll} {mod} = {total} против Сл {dc}',
     critSuccess: 'Критический успех!',
     critFail: 'Критический провал!',

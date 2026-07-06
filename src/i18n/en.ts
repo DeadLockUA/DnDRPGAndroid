@@ -56,6 +56,7 @@ export const EN = {
     rollPrompt: 'A {ability} check is needed (DC {dc}).',
     roll: 'Roll d20',
     rolling: 'Rolling…',
+    orActInstead: 'Or type a different action below — you don’t have to roll.',
     youRolled: 'You rolled {roll} {mod} = {total} vs DC {dc}',
     critSuccess: 'Critical success!',
     critFail: 'Critical failure!',

@@ -122,6 +122,27 @@ describe('useGameplay — dice → updates → accept', () => {
     ).toBe(true)
   })
 
+  it('lets the player act instead of rolling, discarding the pending roll', async () => {
+    gemini.generateDMTurn
+      .mockResolvedValueOnce(needsRoll())
+      .mockResolvedValueOnce(plain('You do something else entirely.'))
+    const s = await createSession(seed())
+    const { result } = await mountFor(s.id)
+
+    await act(async () => {
+      await result.current.submitAction('I pick the lock')
+    })
+    expect(result.current.phase).toBe('awaitingRoll')
+
+    // Instead of rolling, the player declares a different action.
+    await act(async () => {
+      await result.current.submitAction('Actually I kick the door down')
+    })
+    expect(result.current.phase).toBe('idle')
+    expect(result.current.pendingRoll).toBeNull()
+    expect(gemini.generateDMTurn).toHaveBeenCalledTimes(2)
+  })
+
   it('goes to defeated when accepted damage drops HP to 0', async () => {
     gemini.generateDMTurn.mockResolvedValueOnce(
       withUpdates([{ type: 'hp_delta', payload: { amount: -50 }, reason: 'crush' }]),

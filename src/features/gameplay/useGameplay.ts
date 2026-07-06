@@ -174,10 +174,13 @@ export function useGameplay(sessionId: string) {
     })()
   }, [sessionId, runDMTurn])
 
-  // Player submits a free-text action.
+  // Player submits a free-text action. Allowed on their turn, and also while a
+  // roll is pending — in that case the player is choosing to do something else
+  // instead of rolling, so the pending roll is discarded.
   const submitAction = useCallback(
     async (text: string) => {
-      if (!session || phase !== 'idle') return
+      if (!session || (phase !== 'idle' && phase !== 'awaitingRoll')) return
+      setPendingRoll(null)
       session.messages.push({ role: 'player', content: text, timestamp: ts() })
       setSession({ ...session })
       await runDMTurn(session, historyForModel(session))
