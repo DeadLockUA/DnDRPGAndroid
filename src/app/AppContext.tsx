@@ -33,6 +33,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
+    // Ask the browser to keep our IndexedDB data instead of treating it as
+    // evictable "best-effort" storage. Fire-and-forget; unsupported in some
+    // browsers/private modes.
+    void navigator.storage?.persist?.().catch(() => {})
     getSettings()
       .then((loaded) => {
         if (cancelled) return

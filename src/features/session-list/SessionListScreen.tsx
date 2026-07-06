@@ -9,11 +9,13 @@ export default function SessionListScreen({ navigate }: { navigate: Navigate }) 
   const { t, language, hasKey } = useApp()
   const [sessions, setSessions] = useState<GameSession[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     getAllSessions()
       .then(setSessions)
+      .catch((e) => setLoadError(String(e?.message ?? e)))
       .finally(() => setLoading(false))
   }, [])
 
@@ -38,6 +40,12 @@ export default function SessionListScreen({ navigate }: { navigate: Navigate }) 
       </div>
 
       {!hasKey && <div className="banner banner-error">{t.sessions.needKey}</div>}
+
+      {loadError && (
+        <div className="banner banner-error" role="alert">
+          {t.errors.UNKNOWN} ({loadError})
+        </div>
+      )}
 
       <button
         className="btn-primary new-game"
